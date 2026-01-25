@@ -5,7 +5,7 @@ import java.util.Locale
 
 object ReservationValidations {
 
-    const val MAX_PERSONS = 6 // Actualizado a 6 según requerimiento
+    const val MAX_PERSONS = 8 // Actualizado a 8 según requerimiento
 
     fun isValidDate(date: String): Boolean {
         return try {

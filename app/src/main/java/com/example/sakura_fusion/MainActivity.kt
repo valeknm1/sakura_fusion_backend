@@ -31,6 +31,7 @@ import androidx.navigation.navArgument
 import com.example.sakura_fusion.data.pedido.Pedido
 import com.example.sakura_fusion.data.reserva.Reserva
 import com.example.sakura_fusion.data.mesa.Mesa
+import com.example.sakura_fusion.data.usuario.Usuario
 import com.example.sakura_fusion.ui.screens.*
 import com.example.sakura_fusion.ui.theme.Sakura_fusionTheme
 import com.example.sakura_fusion.ui.viewmodel.AppViewModel
@@ -64,8 +65,6 @@ fun AppNavigation() {
         }
     } else "login"
 
-    val registeredEmails = remember { mutableStateListOf("admin@sakura.com", "mesero@sakura.com") }
-    
     val allOrders by appViewModel.pedidos.collectAsState()
     val allReservations by appViewModel.reservas.collectAsState()
     
@@ -75,6 +74,7 @@ fun AppNavigation() {
     ) {
         composable("login") {
             LoginScreen(
+                appViewModel = appViewModel,
                 onLoginSuccess = { role, email ->
                     sessionManager.saveSession(email, role)
                     userEmail = email
@@ -94,10 +94,10 @@ fun AppNavigation() {
         }
         composable("register") {
             RegisterScreen(
-                existingEmails = registeredEmails,
+                appViewModel = appViewModel,
                 onBack = { navController.popBackStack() },
-                onRegisterSuccess = { newEmail ->
-                    registeredEmails.add(newEmail.lowercase())
+                onRegisterSuccess = { newUser ->
+                    appViewModel.registrarUsuario(newUser)
                     navController.navigate("login") {
                         popUpTo("register") { inclusive = true }
                     }
@@ -121,7 +121,7 @@ fun AppNavigation() {
             AdminMainScreen(
                 userEmail = userEmail,
                 allOrders = allOrders,
-                allReservations = allReservations.toMutableList(),
+                allReservations = allReservations,
                 appViewModel = appViewModel,
                 onLogout = {
                     sessionManager.clearSession()
@@ -133,7 +133,7 @@ fun AppNavigation() {
             WaiterMainScreen(
                 userEmail = userEmail,
                 allOrders = allOrders,
-                allReservations = allReservations.toMutableList(),
+                allReservations = allReservations,
                 appViewModel = appViewModel,
                 onLogout = {
                     sessionManager.clearSession()
@@ -161,7 +161,8 @@ fun ClientMainScreen(
         NavHost(navController, startDestination = Screen.Menu.route, Modifier.padding(innerPadding)) {
             composable(Screen.Menu.route) { 
                 MenuScreen(onOrderConfirmed = { nuevoPedido ->
-                    appViewModel.crearPedido(nuevoPedido.copy(nombreCliente = userEmail.split("@")[0]))
+                    val clientName = userEmail.split("@").firstOrNull()?.replaceFirstChar { it.uppercase() } ?: "Cliente"
+                    appViewModel.crearPedido(nuevoPedido.copy(nombreCliente = clientName))
                 }) 
             }
             composable(Screen.Reservas.route) { 
@@ -193,6 +194,7 @@ fun ClientMainScreen(
                 val count = backStackEntry.arguments?.getInt("count") ?: 1
                 ReservaFormScreen(onBack = { fecha, hora, personas ->
                     if (fecha.isNotEmpty()) {
+                        val clientName = userEmail.split("@").firstOrNull()?.replaceFirstChar { it.uppercase() } ?: "Cliente"
                         appViewModel.crearReserva(Reserva(
                             idReserva = 0,
                             fecha = fecha,
@@ -200,7 +202,7 @@ fun ClientMainScreen(
                             cantPersonas = count,
                             idUsuario = 1,
                             idMesa = idMesa,
-                            nombreCliente = userEmail.split("@")[0]
+                            nombreCliente = clientName
                         ))
                         navController.navigate(Screen.Reservas.route) {
                             popUpTo("nueva_reserva/{count}") { inclusive = true }
@@ -242,7 +244,7 @@ fun ClientMainScreen(
 fun AdminMainScreen(
     userEmail: String,
     allOrders: List<Pedido>,
-    allReservations: MutableList<Reserva>,
+    allReservations: List<Reserva>,
     appViewModel: AppViewModel,
     onLogout: () -> Unit
 ) {
@@ -265,7 +267,12 @@ fun AdminMainScreen(
         }
     ) { padding ->
         Box(Modifier.padding(padding)) { 
-            AdminDashboardScreen(allOrders = allOrders, allReservations = allReservations) 
+            AdminDashboardScreen(
+                allOrders = allOrders, 
+                allReservations = allReservations,
+                onConfirmReserva = { appViewModel.confirmarReserva(it) },
+                onClearOrders = { appViewModel.clearAllOrders() }
+            )
         }
     }
 }
@@ -274,7 +281,7 @@ fun AdminMainScreen(
 fun WaiterMainScreen(
     userEmail: String,
     allOrders: List<Pedido>,
-    allReservations: MutableList<Reserva>,
+    allReservations: List<Reserva>,
     appViewModel: AppViewModel,
     onLogout: () -> Unit
 ) {
@@ -300,7 +307,6 @@ fun WaiterMainScreen(
             WaiterDashboardScreen(
                 allOrders = allOrders, 
                 allReservations = allReservations,
-                onConfirmReserva = { appViewModel.confirmarReserva(it) },
                 onDeliverOrder = { appViewModel.entregarPedido(it) }
             )
         }

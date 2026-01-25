@@ -11,7 +11,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -19,16 +18,21 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.sakura_fusion.validations.UserValidations
+import com.example.sakura_fusion.ui.viewmodel.AppViewModel
+import kotlinx.coroutines.launch
 
 @Composable
-fun LoginScreen(onLoginSuccess: (String, String) -> Unit, onRegisterClick: () -> Unit) {
+fun LoginScreen(
+    appViewModel: AppViewModel,
+    onLoginSuccess: (String, String) -> Unit, 
+    onRegisterClick: () -> Unit
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // IE 2.1.1: Fondo visual coherente con la temática (Árbol de Sakura)
         AsyncImage(
             model = "https://images.unsplash.com/photo-1522383225653-ed111181a951?q=80&w=1000&auto=format&fit=crop",
             contentDescription = null,
@@ -36,7 +40,6 @@ fun LoginScreen(onLoginSuccess: (String, String) -> Unit, onRegisterClick: () ->
             contentScale = ContentScale.Crop
         )
         
-        // Capa de oscurecimiento para legibilidad
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -85,11 +88,7 @@ fun LoginScreen(onLoginSuccess: (String, String) -> Unit, onRegisterClick: () ->
                         shape = RoundedCornerShape(16.dp),
                         leadingIcon = { Icon(Icons.Default.Email, null, tint = MaterialTheme.colorScheme.primary) },
                         isError = errorMessage != null,
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White
-                        )
+                        singleLine = true
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -106,11 +105,7 @@ fun LoginScreen(onLoginSuccess: (String, String) -> Unit, onRegisterClick: () ->
                         shape = RoundedCornerShape(16.dp),
                         leadingIcon = { Icon(Icons.Default.Lock, null, tint = MaterialTheme.colorScheme.primary) },
                         isError = errorMessage != null,
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White
-                        )
+                        singleLine = true
                     )
 
                     AnimatedVisibility(visible = errorMessage != null) {
@@ -126,11 +121,18 @@ fun LoginScreen(onLoginSuccess: (String, String) -> Unit, onRegisterClick: () ->
 
                     Button(
                         onClick = { 
-                            val role = UserValidations.validateLoginRole(email, password)
-                            if (role != null) {
-                                onLoginSuccess(role, email) 
-                            } else {
-                                errorMessage = "Credenciales incorrectas"
+                            scope.launch {
+                                val user = appViewModel.login(email, password)
+                                if (user != null) {
+                                    val role = when(user.idRol) {
+                                        1 -> "admin"
+                                        2 -> "mesero"
+                                        else -> "cliente"
+                                    }
+                                    onLoginSuccess(role, user.email)
+                                } else {
+                                    errorMessage = "Correo o contraseña incorrectos"
+                                }
                             }
                         },
                         modifier = Modifier

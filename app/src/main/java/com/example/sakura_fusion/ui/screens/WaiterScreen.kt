@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.List
@@ -29,8 +30,7 @@ import java.util.Locale
 @Composable
 fun WaiterDashboardScreen(
     allOrders: List<Pedido>, 
-    allReservations: MutableList<Reserva>,
-    onConfirmReserva: (Reserva) -> Unit,
+    allReservations: List<Reserva>,
     onDeliverOrder: (Pedido) -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -45,7 +45,7 @@ fun WaiterDashboardScreen(
         when (selectedTab) {
             0 -> TablesTab(allOrders)
             1 -> WaiterOrdersTab(allOrders, onDeliverOrder)
-            2 -> WaiterReservationsTab(allReservations, onConfirmReserva)
+            2 -> WaiterReservationsTab(allReservations)
         }
     }
 }
@@ -153,10 +153,10 @@ fun WaiterOrdersTab(allOrders: List<Pedido>, onDeliver: (Pedido) -> Unit) {
 }
 
 @Composable
-fun WaiterReservationsTab(allReservations: List<Reserva>, onConfirm: (Reserva) -> Unit) {
+fun WaiterReservationsTab(allReservations: List<Reserva>) {
     Column(modifier = Modifier.padding(16.dp)) {
         Text("Agenda de Reservas", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-        Text("Horarios programados. Puedes confirmar las pendientes.", fontSize = 14.sp, color = MaterialTheme.colorScheme.secondary)
+        Text("Horarios programados para hoy.", fontSize = 14.sp, color = MaterialTheme.colorScheme.secondary)
         Spacer(modifier = Modifier.height(16.dp))
 
         if (allReservations.isEmpty()) {
@@ -178,20 +178,11 @@ fun WaiterReservationsTab(allReservations: List<Reserva>, onConfirm: (Reserva) -
                                 Text("Personas: ${reserva.cantPersonas} - Mesa #${reserva.idMesa}")
                             }
                             
-                            if (reserva.estado == "Pendiente") {
-                                Button(
-                                    onClick = { onConfirm(reserva) },
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF388E3C))
-                                ) {
-                                    Text("Confirmar", fontSize = 12.sp)
-                                }
-                            } else {
-                                Text(
-                                    reserva.estado, 
-                                    color = Color(0xFF388E3C), 
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
+                            Text(
+                                reserva.estado, 
+                                color = if (reserva.estado == "Confirmada") Color(0xFF388E3C) else Color(0xFFE65100), 
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }

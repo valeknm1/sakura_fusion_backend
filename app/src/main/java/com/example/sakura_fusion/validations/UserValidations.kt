@@ -17,21 +17,25 @@ object UserValidations {
     }
 
     fun isEmailAlreadyRegistered(email: String, existingEmails: List<String>): Boolean {
-        return existingEmails.contains(email.lowercase())
+        return existingEmails.any { it.equals(email.trim(), ignoreCase = true) }
     }
 
     fun validateLoginRole(email: String, password: String): String? {
+        val cleanEmail = email.lowercase().trim()
         return when {
             // Admin: email y password exactos
-            email == "admin@sakura.com" && password == "admin123" -> "admin"
+            cleanEmail == "admin@sakura.com" && password == "admin123" -> "admin"
             
             // Mesero: email y password exactos
-            email == "mesero@sakura.com" && password == "mesero123" -> "mesero"
+            cleanEmail == "mesero@sakura.com" && password == "mesero123" -> "mesero"
             
-            // Cliente: email válido, no del staff, y password de al menos 6 chars
-            isValidEmail(email) && !email.endsWith("@sakura.com") && isValidPassword(password) -> "cliente"
+            // Cliente Demo: valeria@gmail.com con su clave específica
+            cleanEmail == "valeria@gmail.com" && password == "valeria123" -> "cliente"
             
-            // Caso de error: credenciales no coinciden
+            // Fallback para otros clientes registrados en el demo
+            isValidEmail(cleanEmail) && !cleanEmail.endsWith("@sakura.com") && password == "123456" -> "cliente"
+            
+            // Caso de error: credenciales no coinciden o no cumplen requisitos
             else -> null
         }
     }

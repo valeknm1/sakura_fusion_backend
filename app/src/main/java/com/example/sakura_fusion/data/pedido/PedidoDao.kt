@@ -18,4 +18,7 @@ interface PedidoDao {
 
     @Delete
     suspend fun delete(pedido: Pedido)
+
+    @Query("DELETE FROM pedido")
+    suspend fun deleteAll()
 }

@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,16 +32,18 @@ import java.util.Locale
 @Composable
 fun AdminDashboardScreen(
     allOrders: List<Pedido>, 
-    allReservations: MutableList<Reserva>
+    allReservations: List<Reserva>,
+    onConfirmReserva: (Reserva) -> Unit = {},
+    onClearOrders: () -> Unit = {}
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     
     // Lista de productos mock para el admin
     var inventoryList by remember { mutableStateOf<List<Producto>>(listOf(
-        Producto(1, "Sushi Sakura", "Salmón y aguacate", 8990.0, 10, 2, "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=500&auto=format&fit=crop", "Sushi"),
-        Producto(2, "Ramen Tonkotsu", "Cerdo y fideos", 11500.0, 5, 3, "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?q=80&w=500&auto=format&fit=crop", "Ramen"),
-        Producto(3, "Gyoza", "Empanadillas japonesas", 5500.0, 20, 1, "https://images.unsplash.com/photo-1534422298391-e4f8c170db06?q=80&w=500&auto=format&fit=crop", "Entradas"),
-        Producto(4, "Mochi Fresa", "Postre de arroz", 3200.0, 15, 5, "https://images.unsplash.com/photo-1582176242273-085d82991a69?q=80&w=500&auto=format&fit=crop", "Postres")
+        Producto(1, "Sushi Sakura", "Salmón y aguacate", 8990.0, 10, 2, "https://plus.unsplash.com/premium_photo-1668143358351-b20146dbcc02?q=80&w=500&auto=format&fit=crop", "Sushi"),
+        Producto(2, "Ramen Tonkotsu", "Cerdo y fideos", 11500.0, 5, 3, "https://images.unsplash.com/photo-1557872245-741f4c666e5c?q=80&w=500&auto=format&fit=crop", "Ramen"),
+        Producto(3, "Gyoza", "Empanadillas japonesas", 5500.0, 20, 1, "https://images.unsplash.com/photo-1496116218417-1a781b1c416c?q=80&w=500&auto=format&fit=crop", "Entradas"),
+        Producto(4, "Mochi Fresa", "Postre de arroz", 3200.0, 15, 5, "https://images.unsplash.com/photo-1563805042-7684c019e1cb?q=80&w=500&auto=format&fit=crop", "Postres")
     )) }
 
     Column {
@@ -55,8 +58,8 @@ fun AdminDashboardScreen(
                 inventory = inventoryList, 
                 onUpdate = { inventoryList = it }
             )
-            1 -> OrdersTab(allOrders)
-            2 -> AdminReservationsTab(allReservations)
+            1 -> OrdersTab(allOrders, onClearOrders)
+            2 -> AdminReservationsTab(allReservations, onConfirmReserva)
         }
     }
 }
@@ -188,11 +191,20 @@ fun ProductFormDialog(
 }
 
 @Composable
-fun OrdersTab(allOrders: List<Pedido>) {
+fun OrdersTab(allOrders: List<Pedido>, onClear: () -> Unit) {
     val format = NumberFormat.getCurrencyInstance(Locale("es", "CL"))
 
     Column(modifier = Modifier.padding(16.dp)) {
-        Text("Historial de Ventas", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Historial de Ventas", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            IconButton(onClick = onClear) {
+                Icon(Icons.Default.Refresh, contentDescription = "Limpiar Pedidos", tint = MaterialTheme.colorScheme.error)
+            }
+        }
         Spacer(modifier = Modifier.height(16.dp))
 
         if (allOrders.isEmpty()) {
@@ -223,7 +235,10 @@ fun OrdersTab(allOrders: List<Pedido>) {
 }
 
 @Composable
-fun AdminReservationsTab(allReservations: MutableList<Reserva>) {
+fun AdminReservationsTab(
+    allReservations: List<Reserva>,
+    onConfirm: (Reserva) -> Unit
+) {
     Column(modifier = Modifier.padding(16.dp)) {
         Text("Control de Reservas", fontSize = 20.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(16.dp))
@@ -249,12 +264,7 @@ fun AdminReservationsTab(allReservations: MutableList<Reserva>) {
                             Column(horizontalAlignment = Alignment.End) {
                                 if (reserva.estado == "Pendiente") {
                                     Button(
-                                        onClick = { 
-                                            val index = allReservations.indexOf(reserva)
-                                            if (index != -1) {
-                                                allReservations[index] = reserva.copy(estado = "Confirmada")
-                                            }
-                                        },
+                                        onClick = { onConfirm(reserva) },
                                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF388E3C))
                                     ) {
                                         Text("Confirmar", fontSize = 12.sp)

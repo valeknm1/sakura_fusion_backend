@@ -1,8 +1,10 @@
 package com.example.sakura_fusion.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -15,16 +17,17 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.sakura_fusion.data.usuario.Usuario
+import com.example.sakura_fusion.ui.viewmodel.AppViewModel
 import com.example.sakura_fusion.validations.UserValidations
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
-    existingEmails: List<String>,
+    appViewModel: AppViewModel,
     onBack: () -> Unit, 
-    onRegisterSuccess: (String) -> Unit
+    onRegisterSuccess: (Usuario) -> Unit
 ) {
     var nombre by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -34,8 +37,9 @@ fun RegisterScreen(
 
     val scope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
 
-    // Validaciones usando Utils
+    // Validaciones
     val isEmailValid = UserValidations.isValidEmail(email)
     val isTelefonoValid = UserValidations.isValidTelefono(telefono)
     val isPasswordValid = UserValidations.isValidPassword(password)
@@ -44,7 +48,7 @@ fun RegisterScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Registro") },
+                title = { Text("Registro", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
@@ -57,6 +61,7 @@ fun RegisterScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .verticalScroll(scrollState)
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -67,14 +72,27 @@ fun RegisterScreen(
                 color = MaterialTheme.colorScheme.primary
             )
 
+            Text(
+                text = "Únete a Sakura Fusion hoy mismo",
+                fontSize = 14.sp,
+                color = Color.Gray,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+
             Spacer(modifier = Modifier.height(32.dp))
 
             if (errorMessage != null) {
-                Text(
-                    text = errorMessage!!,
-                    color = Color.Red,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                ) {
+                    Text(
+                        text = errorMessage!!,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.padding(12.dp),
+                        fontSize = 14.sp
+                    )
+                }
             }
 
             OutlinedTextField(
@@ -94,7 +112,7 @@ fun RegisterScreen(
                 label = { Text("Correo electrónico") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                isError = (email.isNotEmpty() && !isEmailValid) || errorMessage != null,
+                isError = email.isNotEmpty() && !isEmailValid,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 singleLine = true
             )
@@ -104,7 +122,7 @@ fun RegisterScreen(
             OutlinedTextField(
                 value = telefono,
                 onValueChange = { if (it.length <= 9) { telefono = it; errorMessage = null } },
-                label = { Text("Teléfono móvil (Chile)") },
+                label = { Text("Teléfono móvil") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 isError = telefono.isNotEmpty() && !isTelefonoValid,
@@ -119,7 +137,7 @@ fun RegisterScreen(
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it; errorMessage = null },
-                label = { Text("Contraseña (min. 6 caracteres)") },
+                label = { Text("Contraseña (mín. 6 caracteres)") },
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -131,27 +149,43 @@ fun RegisterScreen(
 
             Button(
                 onClick = {
-                    if (UserValidations.isEmailAlreadyRegistered(email, existingEmails)) {
-                        errorMessage = "Este correo ya está registrado."
-                        return@Button
-                    }
-
                     scope.launch {
                         isLoading = true
-                        delay(1000)
-                        onRegisterSuccess(email)
-                        isLoading = false
+                        // IE 2.3.1: Validación de email duplicado contra la base de datos real
+                        if (appViewModel.isEmailRegistered(email)) {
+                            errorMessage = "Este correo ya está registrado en nuestra base de datos."
+                            isLoading = false
+                        } else {
+                            val nuevoUsuario = Usuario(
+                                idUsuario = 0,
+                                nombre = nombre,
+                                email = email.lowercase().trim(),
+                                password = password,
+                                idRol = 3 // Rol Cliente
+                            )
+                            onRegisterSuccess(nuevoUsuario)
+                            isLoading = false
+                        }
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp),
+                    .height(56.dp),
                 enabled = !isLoading && isFormValid,
                 shape = RoundedCornerShape(12.dp)
             ) {
-                if (isLoading) CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
-                else Text("Registrarse", fontSize = 18.sp)
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        color = Color.White, 
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text("Registrarse", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                }
             }
+            
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }

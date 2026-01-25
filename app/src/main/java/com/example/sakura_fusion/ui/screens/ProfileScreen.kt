@@ -1,13 +1,17 @@
 package com.example.sakura_fusion.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.CameraAlt
@@ -24,8 +28,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import coil.compose.AsyncImage
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,11 +39,18 @@ fun ProfileScreen(userEmail: String, onEditProfile: () -> Unit, onLogout: () -> 
     val context = LocalContext.current
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var showDialog by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
     
-    // Configuración para la cámara
+    val fileProviderAuthority = "${context.packageName}.fileprovider"
+    
     val tempUri = remember {
-        val file = File(context.cacheDir, "temp_image.jpg")
-        FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+        try {
+            val file = File(context.cacheDir, "temp_image.jpg")
+            if (!file.exists()) file.createNewFile()
+            FileProvider.getUriForFile(context, fileProviderAuthority, file)
+        } catch (e: Exception) {
+            null
+        }
     }
 
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
@@ -49,17 +61,53 @@ fun ProfileScreen(userEmail: String, onEditProfile: () -> Unit, onLogout: () -> 
         if (uri != null) imageUri = uri
     }
 
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted && tempUri != null) {
+            cameraLauncher.launch(tempUri)
+        }
+    }
+
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Mi Perfil", fontWeight = FontWeight.Bold) }) }
-    ) { padding ->
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Mi Perfil", fontWeight = FontWeight.Bold) }
+            )
+        },
+        bottomBar = {
+            // Botón de cerrar sesión fijo en la parte inferior de la pantalla de perfil
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
+            ) {
+                Button(
+                    onClick = onLogout,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC62828)),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.ExitToApp, null, tint = Color.White)
+                    Spacer(Modifier.width(12.dp))
+                    Text("Cerrar Sesión", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
+                }
+            }
+        }
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(24.dp),
+                .padding(innerPadding)
+                .verticalScroll(scrollState)
+                .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // IE 2.4.1: Acceso a recursos nativos (Cámara y Galería)
+            Spacer(modifier = Modifier.height(16.dp))
+            
             Box(
                 modifier = Modifier
                     .size(120.dp)
@@ -92,7 +140,7 @@ fun ProfileScreen(userEmail: String, onEditProfile: () -> Unit, onLogout: () -> 
             Spacer(modifier = Modifier.height(16.dp))
             
             Text(
-                text = userEmail.split("@")[0].replaceFirstChar { it.uppercase() },
+                text = userEmail.split("@").firstOrNull()?.replaceFirstChar { it.uppercase() } ?: "Usuario",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -104,7 +152,7 @@ fun ProfileScreen(userEmail: String, onEditProfile: () -> Unit, onLogout: () -> 
             ProfileInfoItem(label = "Rol", value = if (userEmail.contains("admin")) "Administrador" else if (userEmail.contains("mesero")) "Mesero" else "Cliente")
             ProfileInfoItem(label = "Teléfono", value = "+56 9 1234 5678")
             ProfileInfoItem(label = "Miembro desde", value = "Enero 2024")
-
+            
             Spacer(modifier = Modifier.height(24.dp))
 
             OutlinedButton(
@@ -116,57 +164,52 @@ fun ProfileScreen(userEmail: String, onEditProfile: () -> Unit, onLogout: () -> 
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Editar Datos y Seguridad")
             }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            Button(
-                onClick = onLogout,
-                modifier = Modifier.fillMaxWidth().height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Cerrar Sesión")
-            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
         }
+    }
 
-        if (showDialog) {
-            AlertDialog(
-                onDismissRequest = { showDialog = false },
-                title = { Text("Foto de Perfil") },
-                text = { Text("Elige una de las siguientes opciones para actualizar tu imagen.") },
-                confirmButton = {
-                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Button(
-                            onClick = { 
-                                cameraLauncher.launch(tempUri)
-                                showDialog = false 
-                            },
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
-                        ) {
-                            Icon(Icons.Default.CameraAlt, null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Tomar Foto")
-                        }
-                        OutlinedButton(
-                            onClick = { 
-                                galleryLauncher.launch("image/*")
-                                showDialog = false 
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.PhotoLibrary, null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Elegir de Galería")
-                        }
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Foto de Perfil") },
+            text = { Text("Elige una de las siguientes opciones para actualizar tu imagen.") },
+            confirmButton = {
+                Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Button(
+                        onClick = { 
+                            val permissionCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+                            if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+                                if (tempUri != null) cameraLauncher.launch(tempUri)
+                            } else {
+                                permissionLauncher.launch(Manifest.permission.CAMERA)
+                            }
+                            showDialog = false 
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        enabled = tempUri != null
+                    ) {
+                        Icon(Icons.Default.CameraAlt, null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Tomar Foto")
                     }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDialog = false }) { Text("Cancelar") }
+                    OutlinedButton(
+                        onClick = { 
+                            galleryLauncher.launch("image/*")
+                            showDialog = false 
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.PhotoLibrary, null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Elegir de Galería")
+                    }
                 }
-            )
-        }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) { Text("Cancelar") }
+            }
+        )
     }
 }
 

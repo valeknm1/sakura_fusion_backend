@@ -102,7 +102,9 @@ class MenuViewModel(application: Application) : AndroidViewModel(application) {
         _cart.value = currentCart
     }
 
-    fun createPedido(tipoEntrega: String = "Para llevar", numeroMesa: Int? = null): Pedido {
+    // IE 2.3.1: Solo creamos el objeto Pedido, la inserción real la hace AppViewModel
+    // para centralizar la lógica y evitar duplicados en la base de datos.
+    fun createPedido(tipoEntrega: String = "Para llevar", numeroMesa: Int? = null, nombreCliente: String = ""): Pedido {
         val total = _cart.value.sumOf { it.producto.precio * it.cantidad }
         val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
         val currentDate = sdf.format(Date())
@@ -115,12 +117,8 @@ class MenuViewModel(application: Application) : AndroidViewModel(application) {
             idUsuario = 1,
             tipoEntrega = tipoEntrega,
             numeroMesa = numeroMesa,
-            nombreCliente = "Cliente Demo"
+            nombreCliente = nombreCliente
         )
-        
-        viewModelScope.launch {
-            repository.insertPedido(nuevoPedido)
-        }
         
         _cart.value = emptyList()
         return nuevoPedido
