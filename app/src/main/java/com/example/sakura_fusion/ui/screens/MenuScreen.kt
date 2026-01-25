@@ -21,12 +21,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.example.sakura_fusion.R
 import com.example.sakura_fusion.data.pedido.Pedido
 import com.example.sakura_fusion.data.producto.Producto
 import com.example.sakura_fusion.ui.viewmodel.MenuViewModel
@@ -243,8 +245,15 @@ fun ProductoItem(producto: Producto, onAddToCart: () -> Unit) {
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // IE 2.1.2: Lógica para cargar imagen local o remota
+            val imageSource: Any? = if (producto.imagenUrl == "mochi_fresa") {
+                R.drawable.mochi_fresa
+            } else {
+                producto.imagenUrl
+            }
+
             AsyncImage(
-                model = producto.imagenUrl,
+                model = imageSource,
                 contentDescription = null,
                 modifier = Modifier
                     .size(100.dp)

@@ -35,6 +35,11 @@ import coil.compose.AsyncImage
 import com.example.sakura_fusion.ui.viewmodel.AppViewModel
 import java.io.File
 
+/**
+ * IE 2.1.2: Dominio técnico del diseño visual.
+ * La interfaz utiliza Scaffold para organizar componentes de forma estándar (TopBar, BottomBar)
+ * y favorecer la usabilidad.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
@@ -48,7 +53,10 @@ fun ProfileScreen(
     var showDialog by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     
-    // IE 2.3.1: Obtener los datos más recientes del usuario desde la base de datos
+    /**
+     * IE 2.2.2: Gestión de estado y respuesta dinámica.
+     * Se recuperan los datos del usuario de forma reactiva desde el repositorio local.
+     */
     val allOrders by appViewModel.pedidos.collectAsState() 
     var currentUserName by remember { mutableStateOf(userEmail.split("@")[0].replaceFirstChar { it.uppercase() }) }
     var currentUserPhone by remember { mutableStateOf("+56 9 1234 5678") }
@@ -60,7 +68,6 @@ fun ProfileScreen(
             if (user.telefono.isNotEmpty()) {
                 currentUserPhone = "+56 ${user.telefono}"
             }
-            // IE 2.3.1: Cargar imagen persistida
             if (user.imagenUri != null) {
                 imageUri = Uri.parse(user.imagenUri)
             }
@@ -79,10 +86,13 @@ fun ProfileScreen(
         }
     }
 
+    /**
+     * IE 2.4.1: Acceso a recursos nativos (Cámara y Galería).
+     * Se utilizan ActivityResultContracts para manejar el flujo de integración de recursos del sistema.
+     */
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
         if (success && tempUri != null) {
             imageUri = tempUri
-            // IE 2.3.1: Guardar en base de datos
             appViewModel.updateProfileImage(userEmail, tempUri.toString())
         }
     }
@@ -90,11 +100,11 @@ fun ProfileScreen(
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
             imageUri = uri
-            // IE 2.3.1: Guardar en base de datos
             appViewModel.updateProfileImage(userEmail, uri.toString())
         }
     }
 
+    // IE 2.4.1: Manejo de permisos para garantizar el funcionamiento seguro.
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -110,6 +120,7 @@ fun ProfileScreen(
             )
         },
         bottomBar = {
+            // IE 2.1.2: Principio de usabilidad - Botón de acción crítica fijo y visible.
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -141,6 +152,10 @@ fun ProfileScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
             
+            /**
+             * IE 2.4.2: Demostración en tiempo real del recurso nativo.
+             * Se muestra la imagen capturada o seleccionada dentro de la interfaz.
+             */
             Box(
                 modifier = Modifier
                     .size(120.dp)

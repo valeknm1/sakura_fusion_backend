@@ -41,9 +41,9 @@ fun AdminDashboardScreen(
     // Lista de productos mock para el admin
     var inventoryList by remember { mutableStateOf<List<Producto>>(listOf(
         Producto(1, "Sushi Sakura", "Salmón y aguacate", 8990.0, 10, 2, "https://plus.unsplash.com/premium_photo-1668143358351-b20146dbcc02?q=80&w=500&auto=format&fit=crop", "Sushi"),
-        Producto(2, "Ramen Tonkotsu", "Cerdo y fideos", 11500.0, 5, 3, "https://images.unsplash.com/photo-1557872245-741f4c666e5c?q=80&w=500&auto=format&fit=crop", "Ramen"),
+        Producto(2, "Ramen Tonkotsu", "Cerdo y fideos", 11500.0, 5, 3, "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?q=80&w=500&auto=format&fit=crop", "Ramen"),
         Producto(3, "Gyoza", "Empanadillas japonesas", 5500.0, 20, 1, "https://images.unsplash.com/photo-1496116218417-1a781b1c416c?q=80&w=500&auto=format&fit=crop", "Entradas"),
-        Producto(4, "Mochi Fresa", "Postre de arroz", 3200.0, 15, 5, "https://images.unsplash.com/photo-1563805042-7684c019e1cb?q=80&w=500&auto=format&fit=crop", "Postres")
+        Producto(4, "Mochi Fresa", "Postre de arroz", 3200.0, 15, 5, "https://images.unsplash.com/photo-1590577976322-3d2d6e21306a?q=80&w=500&auto=format&fit=crop", "Postres")
     )) }
 
     Column {

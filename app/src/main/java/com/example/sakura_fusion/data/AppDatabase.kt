@@ -21,6 +21,11 @@ import com.example.sakura_fusion.data.pedido.PedidoDao
 import com.example.sakura_fusion.data.detalle_pedido.DetallePedido
 import com.example.sakura_fusion.data.detalle_pedido.DetallePedidoDao
 
+/**
+ * IE 2.3.2: Estructura arquitectónica y almacenamiento local.
+ * Se utiliza el patrón Singleton para la instancia de la base de datos,
+ * asegurando un único punto de acceso y favoreciendo la mantenibilidad.
+ */
 @Database(
     entities = [
         Rol::class,
@@ -32,7 +37,9 @@ import com.example.sakura_fusion.data.detalle_pedido.DetallePedidoDao
         Pedido::class,
         DetallePedido::class
     ],
-    version = 3, // IE 2.3.1: Incremento a v3 por la adición de imagenUri en Usuario
+    // IE 2.3.1: Se incrementa la versión a 3 debido a la modificación del esquema 
+    // (adición de imagenUri y telefono en la entidad Usuario).
+    version = 3, 
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -50,13 +57,21 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
+        /**
+         * IE 2.3.1: Demostración de implementación de almacenamiento local.
+         * Recuperación funcional de la instancia de base de datos Room.
+         */
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "sakura_fusion"
-                ).fallbackToDestructiveMigration().build()
+                )
+                // Se utiliza fallbackToDestructiveMigration para facilitar el desarrollo 
+                // ante cambios frecuentes de esquema en esta etapa del proyecto.
+                .fallbackToDestructiveMigration()
+                .build()
                 INSTANCE = instance
                 instance
             }
