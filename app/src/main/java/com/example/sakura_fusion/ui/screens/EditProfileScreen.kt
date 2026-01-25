@@ -108,7 +108,7 @@ fun EditProfileScreen(
 
     // Diálogo para cambiar Nombre
     if (showNameDialog) {
-        var tempName by remember { mutableStateOf(nombre) }
+        var tempName by remember { mutableStateOf("") } // Iniciamos vacío como solicitó el usuario
         AlertDialog(
             onDismissRequest = { showNameDialog = false },
             title = { Text("Cambiar Nombre") },
@@ -117,7 +117,8 @@ fun EditProfileScreen(
                     value = tempName,
                     onValueChange = { tempName = it },
                     label = { Text("Nuevo Nombre") },
-                    singleLine = true
+                    singleLine = true,
+                    placeholder = { Text("Escribe tu nuevo nombre") }
                 )
             },
             confirmButton = {
@@ -137,7 +138,7 @@ fun EditProfileScreen(
 
     // Diálogo para cambiar Teléfono
     if (showPhoneDialog) {
-        var tempPhone by remember { mutableStateOf(telefono) }
+        var tempPhone by remember { mutableStateOf("") } // Iniciamos vacío como solicitó el usuario
         AlertDialog(
             onDismissRequest = { showPhoneDialog = false },
             title = { Text("Cambiar Teléfono") },
@@ -148,7 +149,8 @@ fun EditProfileScreen(
                     label = { Text("Nuevo Teléfono") },
                     prefix = { Text("+56 ") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    singleLine = true
+                    singleLine = true,
+                    placeholder = { Text("912345678") }
                 )
             },
             confirmButton = {
@@ -180,7 +182,8 @@ fun EditProfileScreen(
                         onValueChange = { newPass = it },
                         label = { Text("Nueva Contraseña") },
                         visualTransformation = PasswordVisualTransformation(),
-                        singleLine = true
+                        singleLine = true,
+                        placeholder = { Text("Mínimo 6 caracteres") }
                     )
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
@@ -188,7 +191,8 @@ fun EditProfileScreen(
                         onValueChange = { confirmPass = it },
                         label = { Text("Confirmar Contraseña") },
                         visualTransformation = PasswordVisualTransformation(),
-                        singleLine = true
+                        singleLine = true,
+                        placeholder = { Text("Repite la contraseña") }
                     )
                 }
             },
