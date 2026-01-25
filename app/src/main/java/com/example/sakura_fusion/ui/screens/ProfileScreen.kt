@@ -30,16 +30,42 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.example.sakura_fusion.ui.viewmodel.AppViewModel
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(userEmail: String, onEditProfile: () -> Unit, onLogout: () -> Unit) {
+fun ProfileScreen(
+    userEmail: String, 
+    onEditProfile: () -> Unit, 
+    onLogout: () -> Unit,
+    appViewModel: AppViewModel = viewModel()
+) {
     val context = LocalContext.current
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var showDialog by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
+    
+    // IE 2.3.1: Obtener los datos más recientes del usuario desde la base de datos
+    val allOrders by appViewModel.pedidos.collectAsState() 
+    var currentUserName by remember { mutableStateOf(userEmail.split("@")[0].replaceFirstChar { it.uppercase() }) }
+    var currentUserPhone by remember { mutableStateOf("+56 9 1234 5678") }
+
+    LaunchedEffect(userEmail, allOrders) {
+        val user = appViewModel.login(userEmail, "")
+        if (user != null) {
+            currentUserName = user.nombre
+            if (user.telefono.isNotEmpty()) {
+                currentUserPhone = "+56 ${user.telefono}"
+            }
+            // IE 2.3.1: Cargar imagen persistida
+            if (user.imagenUri != null) {
+                imageUri = Uri.parse(user.imagenUri)
+            }
+        }
+    }
     
     val fileProviderAuthority = "${context.packageName}.fileprovider"
     
@@ -54,11 +80,19 @@ fun ProfileScreen(userEmail: String, onEditProfile: () -> Unit, onLogout: () -> 
     }
 
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        if (success) imageUri = tempUri
+        if (success && tempUri != null) {
+            imageUri = tempUri
+            // IE 2.3.1: Guardar en base de datos
+            appViewModel.updateProfileImage(userEmail, tempUri.toString())
+        }
     }
 
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri != null) imageUri = uri
+        if (uri != null) {
+            imageUri = uri
+            // IE 2.3.1: Guardar en base de datos
+            appViewModel.updateProfileImage(userEmail, uri.toString())
+        }
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -76,7 +110,6 @@ fun ProfileScreen(userEmail: String, onEditProfile: () -> Unit, onLogout: () -> 
             )
         },
         bottomBar = {
-            // Botón de cerrar sesión fijo en la parte inferior de la pantalla de perfil
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -140,7 +173,7 @@ fun ProfileScreen(userEmail: String, onEditProfile: () -> Unit, onLogout: () -> 
             Spacer(modifier = Modifier.height(16.dp))
             
             Text(
-                text = userEmail.split("@").firstOrNull()?.replaceFirstChar { it.uppercase() } ?: "Usuario",
+                text = currentUserName,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -150,7 +183,7 @@ fun ProfileScreen(userEmail: String, onEditProfile: () -> Unit, onLogout: () -> 
             Spacer(modifier = Modifier.height(32.dp))
 
             ProfileInfoItem(label = "Rol", value = if (userEmail.contains("admin")) "Administrador" else if (userEmail.contains("mesero")) "Mesero" else "Cliente")
-            ProfileInfoItem(label = "Teléfono", value = "+56 9 1234 5678")
+            ProfileInfoItem(label = "Teléfono", value = currentUserPhone)
             ProfileInfoItem(label = "Miembro desde", value = "Enero 2024")
             
             Spacer(modifier = Modifier.height(24.dp))

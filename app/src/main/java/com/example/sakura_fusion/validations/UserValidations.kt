@@ -16,27 +16,8 @@ object UserValidations {
         return password.length >= 6
     }
 
+    // IE 2.1.2: Validación de correo duplicado
     fun isEmailAlreadyRegistered(email: String, existingEmails: List<String>): Boolean {
         return existingEmails.any { it.equals(email.trim(), ignoreCase = true) }
-    }
-
-    fun validateLoginRole(email: String, password: String): String? {
-        val cleanEmail = email.lowercase().trim()
-        return when {
-            // Admin: email y password exactos
-            cleanEmail == "admin@sakura.com" && password == "admin123" -> "admin"
-            
-            // Mesero: email y password exactos
-            cleanEmail == "mesero@sakura.com" && password == "mesero123" -> "mesero"
-            
-            // Cliente Demo: valeria@gmail.com con su clave específica
-            cleanEmail == "valeria@gmail.com" && password == "valeria123" -> "cliente"
-            
-            // Fallback para otros clientes registrados en el demo
-            isValidEmail(cleanEmail) && !cleanEmail.endsWith("@sakura.com") && password == "123456" -> "cliente"
-            
-            // Caso de error: credenciales no coinciden o no cumplen requisitos
-            else -> null
-        }
     }
 }

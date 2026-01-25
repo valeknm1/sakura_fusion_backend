@@ -39,11 +39,16 @@ fun RegisterScreen(
     var isLoading by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 
-    // Validaciones
-    val isEmailValid = UserValidations.isValidEmail(email)
-    val isTelefonoValid = UserValidations.isValidTelefono(telefono)
-    val isPasswordValid = UserValidations.isValidPassword(password)
-    val isFormValid = nombre.isNotEmpty() && isEmailValid && isTelefonoValid && isPasswordValid
+    // IE 2.1.2: Validaciones en tiempo real
+    val isNombreValid = nombre.isEmpty() || nombre.length >= 3
+    val isEmailValid = email.isEmpty() || UserValidations.isValidEmail(email)
+    val isTelefonoValid = telefono.isEmpty() || UserValidations.isValidTelefono(telefono)
+    val isPasswordValid = password.isEmpty() || UserValidations.isValidPassword(password)
+    
+    val isFormValid = nombre.length >= 3 && 
+                      UserValidations.isValidEmail(email) && 
+                      UserValidations.isValidTelefono(telefono) && 
+                      UserValidations.isValidPassword(password)
 
     Scaffold(
         topBar = {
@@ -101,10 +106,14 @@ fun RegisterScreen(
                 label = { Text("Nombre completo") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
+                isError = !isNombreValid,
+                supportingText = {
+                    if (!isNombreValid) Text("El nombre es demasiado corto", color = MaterialTheme.colorScheme.error)
+                },
                 singleLine = true
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
                 value = email,
@@ -112,12 +121,15 @@ fun RegisterScreen(
                 label = { Text("Correo electrónico") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                isError = email.isNotEmpty() && !isEmailValid,
+                isError = !isEmailValid,
+                supportingText = {
+                    if (!isEmailValid) Text("Formato de correo inválido", color = MaterialTheme.colorScheme.error)
+                },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 singleLine = true
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
                 value = telefono,
@@ -125,23 +137,29 @@ fun RegisterScreen(
                 label = { Text("Teléfono móvil") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                isError = telefono.isNotEmpty() && !isTelefonoValid,
+                isError = !isTelefonoValid,
+                supportingText = {
+                    if (!isTelefonoValid) Text("Debe comenzar con 9 y tener 9 dígitos", color = MaterialTheme.colorScheme.error)
+                },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 prefix = { Text("+56 ") },
                 placeholder = { Text("912345678") },
                 singleLine = true
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it; errorMessage = null },
-                label = { Text("Contraseña (mín. 6 caracteres)") },
+                label = { Text("Contraseña") },
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                isError = password.isNotEmpty() && !isPasswordValid,
+                isError = !isPasswordValid,
+                supportingText = {
+                    if (!isPasswordValid) Text("Mínimo 6 caracteres", color = MaterialTheme.colorScheme.error)
+                },
                 singleLine = true
             )
 
@@ -151,7 +169,6 @@ fun RegisterScreen(
                 onClick = {
                     scope.launch {
                         isLoading = true
-                        // IE 2.3.1: Validación de email duplicado contra la base de datos real
                         if (appViewModel.isEmailRegistered(email)) {
                             errorMessage = "Este correo ya está registrado en nuestra base de datos."
                             isLoading = false

@@ -3,6 +3,7 @@ package com.example.sakura_fusion.data.usuario
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.example.sakura_fusion.data.rol.Rol
 import com.google.gson.annotations.SerializedName
@@ -16,7 +17,8 @@ import com.google.gson.annotations.SerializedName
             childColumns = ["id_rol"],
             onDelete = ForeignKey.CASCADE
         )
-    ]
+    ],
+    indices = [Index(value = ["email"], unique = true)]
 )
 data class Usuario(
     @PrimaryKey(autoGenerate = true)
@@ -27,6 +29,11 @@ data class Usuario(
     val nombre: String,
     val email: String,
     val password: String,
+    
+    val telefono: String = "",
+    
+    @SerializedName("imagen_uri")
+    val imagenUri: String? = null,
 
     @ColumnInfo(name = "id_rol")
     @SerializedName("id_rol")

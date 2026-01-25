@@ -27,6 +27,7 @@ class SakuraRepository(context: Context) {
     suspend fun insertUsuario(usuario: Usuario) = withContext(Dispatchers.IO) { usuarioDao.insert(usuario) }
     suspend fun getUsuarioByEmail(email: String) = withContext(Dispatchers.IO) { usuarioDao.findByEmail(email) }
     suspend fun getAllUsuarios() = withContext(Dispatchers.IO) { usuarioDao.getAll() }
+    suspend fun updateUsuario(usuario: Usuario) = withContext(Dispatchers.IO) { usuarioDao.update(usuario) }
 
     // Menú
     suspend fun getAllProductos() = withContext(Dispatchers.IO) { productoDao.getAll() }

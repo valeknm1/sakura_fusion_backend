@@ -67,6 +67,9 @@ fun ReservaScreen(
         }
 
         if (showInitialDialog) {
+            val count = peopleCount.toIntOrNull() ?: 0
+            val isCountValid = peopleCount.isEmpty() || ReservationValidations.isValidPersonCount(count)
+
             AlertDialog(
                 onDismissRequest = { showInitialDialog = false },
                 title = { Text("¿Para cuántas personas?") },
@@ -80,20 +83,23 @@ fun ReservaScreen(
                             label = { Text("N° de personas") },
                             modifier = Modifier.fillMaxWidth(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            isError = !isCountValid,
+                            supportingText = {
+                                if (!isCountValid) Text("Debe ser entre 1 y ${ReservationValidations.MAX_PERSONS}")
+                            }
                         )
                     }
                 },
                 confirmButton = {
                     Button(
                         onClick = { 
-                            val count = peopleCount.toIntOrNull() ?: 0
                             if (ReservationValidations.isValidPersonCount(count)) {
                                 showInitialDialog = false
                                 onNewReserva(count)
                             }
                         },
-                        enabled = peopleCount.isNotEmpty() && (peopleCount.toIntOrNull() ?: 0) > 0 && (peopleCount.toIntOrNull() ?: 0) <= ReservationValidations.MAX_PERSONS
+                        enabled = peopleCount.isNotEmpty() && ReservationValidations.isValidPersonCount(count)
                     ) {
                         Text("Ver Mesas")
                     }

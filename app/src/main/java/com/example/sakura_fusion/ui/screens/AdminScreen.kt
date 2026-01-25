@@ -144,28 +144,35 @@ fun ProductFormDialog(
                 OutlinedTextField(
                     value = nombre,
                     onValueChange = { nombre = it },
-                    label = { Text("Nombre") },
-                    isError = nombre.isNotEmpty() && !isNombreValid
+                    label = { Text("Nombre (mín. 3)") },
+                    isError = nombre.isNotEmpty() && !isNombreValid,
+                    supportingText = { if (nombre.isNotEmpty() && !isNombreValid) Text("Muy corto") },
+                    singleLine = true
                 )
                 OutlinedTextField(
                     value = desc,
                     onValueChange = { desc = it },
-                    label = { Text("Descripción") },
-                    isError = desc.isNotEmpty() && !isDescValid
+                    label = { Text("Descripción (mín. 10)") },
+                    isError = desc.isNotEmpty() && !isDescValid,
+                    supportingText = { if (desc.isNotEmpty() && !isDescValid) Text("Muy corta") }
                 )
                 OutlinedTextField(
                     value = precio,
                     onValueChange = { if (it.all { c -> c.isDigit() || c == '.' }) precio = it },
                     label = { Text("Precio (CLP)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    isError = precio.isNotEmpty() && !isPrecioValid
+                    isError = precio.isNotEmpty() && !isPrecioValid,
+                    supportingText = { if (precio.isNotEmpty() && !isPrecioValid) Text("Precio inválido") },
+                    singleLine = true
                 )
                 OutlinedTextField(
                     value = stock,
                     onValueChange = { if (it.all { c -> c.isDigit() }) stock = it },
                     label = { Text("Stock") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    isError = stock.isNotEmpty() && !isStockValid
+                    isError = stock.isNotEmpty() && !isStockValid,
+                    supportingText = { if (stock.isNotEmpty() && !isStockValid) Text("Stock inválido") },
+                    singleLine = true
                 )
             }
         },

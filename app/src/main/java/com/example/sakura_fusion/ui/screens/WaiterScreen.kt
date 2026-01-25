@@ -31,6 +31,7 @@ import java.util.Locale
 fun WaiterDashboardScreen(
     allOrders: List<Pedido>, 
     allReservations: List<Reserva>,
+    allMesas: List<Mesa> = emptyList(), // IE 2.3.1: Lista de mesas desde el ViewModel
     onDeliverOrder: (Pedido) -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -43,7 +44,7 @@ fun WaiterDashboardScreen(
         }
         
         when (selectedTab) {
-            0 -> TablesTab(allOrders)
+            0 -> TablesTab(allOrders, allMesas)
             1 -> WaiterOrdersTab(allOrders, onDeliverOrder)
             2 -> WaiterReservationsTab(allReservations)
         }
@@ -51,8 +52,9 @@ fun WaiterDashboardScreen(
 }
 
 @Composable
-fun TablesTab(allOrders: List<Pedido>) {
-    val mesas = remember {
+fun TablesTab(allOrders: List<Pedido>, allMesas: List<Mesa>) {
+    // IE 2.3.1: Usamos las mesas reales si vienen del repositorio, sino las de respaldo
+    val mesas = if (allMesas.isNotEmpty()) allMesas else remember {
         listOf(
             Mesa(1, 1, 2, true),
             Mesa(2, 2, 4, true),
@@ -194,7 +196,10 @@ fun WaiterReservationsTab(allReservations: List<Reserva>) {
 @Composable
 fun WaiterTableCard(mesa: Mesa, allOrders: List<Pedido>) {
     var showOrderDialog by remember { mutableStateOf(false) }
+    // Buscamos un pedido activo para esta mesa (que no haya sido entregado aún)
     val orderForTable = allOrders.find { it.numeroMesa == mesa.numero && it.estado != "Entregado" }
+    
+    // IE 2.3.1: La mesa se marca como OCUPADA automáticamente si existe un pedido pendiente para ella
     val isOcupada = !mesa.disponible || orderForTable != null
 
     Card(
@@ -203,10 +208,20 @@ fun WaiterTableCard(mesa: Mesa, allOrders: List<Pedido>) {
     ) {
         Column(modifier = Modifier.padding(12.dp).fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
             Text("Mesa ${mesa.numero}", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            Text(text = if (!isOcupada) "DISPONIBLE" else "OCUPADA", color = if (!isOcupada) Color(0xFF2E7D32) else Color(0xFFC62828), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            Text(
+                text = if (!isOcupada) "DISPONIBLE" else "OCUPADA", 
+                color = if (!isOcupada) Color(0xFF2E7D32) else Color(0xFFC62828), 
+                fontWeight = FontWeight.Bold, 
+                fontSize = 12.sp
+            )
             Spacer(modifier = Modifier.height(8.dp))
             if (isOcupada) {
-                Button(onClick = { showOrderDialog = true }, modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
+                Button(
+                    onClick = { showOrderDialog = true }, 
+                    modifier = Modifier.fillMaxWidth(), 
+                    contentPadding = PaddingValues(0.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
                     Text("Ver Pedido", fontSize = 11.sp)
                 }
             } else {
@@ -218,16 +233,17 @@ fun WaiterTableCard(mesa: Mesa, allOrders: List<Pedido>) {
     if (showOrderDialog) {
         AlertDialog(
             onDismissRequest = { showOrderDialog = false },
-            title = { Text("Pedido Mesa #${mesa.numero}") },
+            title = { Text("Pedido en Mesa #${mesa.numero}") },
             text = {
                 if (orderForTable != null) {
                     Column {
                         Text("ID: #${orderForTable.idPedido}", fontWeight = FontWeight.Bold)
+                        Text("Cliente: ${orderForTable.nombreCliente}")
                         Text("Total: ${NumberFormat.getCurrencyInstance(Locale("es", "CL")).format(orderForTable.total)}")
-                        Text("Estado: ${orderForTable.estado}")
+                        Text("Estado actual: ${orderForTable.estado}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                     }
                 } else {
-                    Text("Mesa ocupada manualmente.")
+                    Text("Mesa marcada como ocupada manualmente.")
                 }
             },
             confirmButton = { Button(onClick = { showOrderDialog = false }) { Text("Cerrar") } }

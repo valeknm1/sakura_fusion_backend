@@ -67,6 +67,7 @@ fun AppNavigation() {
 
     val allOrders by appViewModel.pedidos.collectAsState()
     val allReservations by appViewModel.reservas.collectAsState()
+    val allMesas by appViewModel.mesas.collectAsState()
     
     NavHost(
         navController = navController, 
@@ -89,6 +90,9 @@ fun AppNavigation() {
                 },
                 onRegisterClick = {
                     navController.navigate("register")
+                },
+                onForgotPasswordClick = {
+                    navController.navigate("forgot_password")
                 }
             )
         }
@@ -100,6 +104,17 @@ fun AppNavigation() {
                     appViewModel.registrarUsuario(newUser)
                     navController.navigate("login") {
                         popUpTo("register") { inclusive = true }
+                    }
+                }
+            )
+        }
+        composable("forgot_password") {
+            ForgotPasswordScreen(
+                appViewModel = appViewModel,
+                onBack = { navController.popBackStack() },
+                onResetSuccess = {
+                    navController.navigate("login") {
+                        popUpTo("forgot_password") { inclusive = true }
                     }
                 }
             )
@@ -121,7 +136,7 @@ fun AppNavigation() {
             AdminMainScreen(
                 userEmail = userEmail,
                 allOrders = allOrders,
-                allReservations = allReservations,
+                allReservations = allReservations.toMutableList(),
                 appViewModel = appViewModel,
                 onLogout = {
                     sessionManager.clearSession()
@@ -133,7 +148,8 @@ fun AppNavigation() {
             WaiterMainScreen(
                 userEmail = userEmail,
                 allOrders = allOrders,
-                allReservations = allReservations,
+                allReservations = allReservations.toMutableList(),
+                allMesas = allMesas,
                 appViewModel = appViewModel,
                 onLogout = {
                     sessionManager.clearSession()
@@ -234,7 +250,11 @@ fun ClientMainScreen(
                 ) 
             }
             composable("edit_profile") {
-                EditProfileScreen(onBack = { navController.popBackStack() })
+                EditProfileScreen(
+                    userEmail = userEmail,
+                    appViewModel = appViewModel,
+                    onBack = { navController.popBackStack() }
+                )
             }
         }
     }
@@ -244,7 +264,7 @@ fun ClientMainScreen(
 fun AdminMainScreen(
     userEmail: String,
     allOrders: List<Pedido>,
-    allReservations: List<Reserva>,
+    allReservations: MutableList<Reserva>,
     appViewModel: AppViewModel,
     onLogout: () -> Unit
 ) {
@@ -281,7 +301,8 @@ fun AdminMainScreen(
 fun WaiterMainScreen(
     userEmail: String,
     allOrders: List<Pedido>,
-    allReservations: List<Reserva>,
+    allReservations: MutableList<Reserva>,
+    allMesas: List<Mesa>,
     appViewModel: AppViewModel,
     onLogout: () -> Unit
 ) {
@@ -307,6 +328,7 @@ fun WaiterMainScreen(
             WaiterDashboardScreen(
                 allOrders = allOrders, 
                 allReservations = allReservations,
+                allMesas = allMesas,
                 onDeliverOrder = { appViewModel.entregarPedido(it) }
             )
         }

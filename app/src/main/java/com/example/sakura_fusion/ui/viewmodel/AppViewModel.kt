@@ -29,6 +29,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val _pedidos = MutableStateFlow<List<Pedido>>(emptyList())
     val pedidos: StateFlow<List<Pedido>> = _pedidos.asStateFlow()
 
+    private val _mesas = MutableStateFlow<List<Mesa>>(emptyList())
+    val mesas: StateFlow<List<Mesa>> = _mesas.asStateFlow()
+
     init {
         loadInitialData()
     }
@@ -41,13 +44,25 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             repository.insertRol(Rol(3, "Cliente"))
 
             if (repository.getUsuarioByEmail("admin@sakura.com") == null) {
-                repository.insertUsuario(Usuario(1, "Admin Sakura", "admin@sakura.com", "admin123", 1))
+                repository.insertUsuario(Usuario(1, "Admin Sakura", "admin@sakura.com", "admin123", "", null, 1))
             }
             if (repository.getUsuarioByEmail("mesero@sakura.com") == null) {
-                repository.insertUsuario(Usuario(2, "Mesero Sakura", "mesero@sakura.com", "mesero123", 2))
+                repository.insertUsuario(Usuario(2, "Mesero Sakura", "mesero@sakura.com", "mesero123", "", null, 2))
             }
             if (repository.getUsuarioByEmail("valeria@gmail.com") == null) {
-                repository.insertUsuario(Usuario(3, "Valeria", "valeria@gmail.com", "valeria123", 3))
+                repository.insertUsuario(Usuario(3, "Valeria", "valeria@gmail.com", "valeria123", "912345678", null, 3))
+            }
+
+            val existingTables = repository.getAllMesas()
+            if (existingTables.isEmpty()) {
+                for (i in 1..8) {
+                    repository.insertMesa(Mesa(i, i, if (i % 2 == 0) 4 else 2, true))
+                }
+            } else {
+                val mesa3 = existingTables.find { it.numero == 3 }
+                if (mesa3 != null && !mesa3.disponible) {
+                    repository.updateMesa(mesa3.copy(disponible = true))
+                }
             }
 
             val existingProducts = repository.getAllProductos()
@@ -57,10 +72,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 repository.insertCategoria(Categoria(3, "Ramen"))
                 repository.insertCategoria(Categoria(4, "Bebidas"))
                 repository.insertCategoria(Categoria(5, "Postres"))
-
-                for (i in 1..8) {
-                    repository.insertMesa(Mesa(i, i, if (i % 2 == 0) 4 else 2, true))
-                }
 
                 val mockProducts = listOf(
                     Producto(1, "Sushi Sakura", "Salmón y aguacate", 8990.0, 10, 2, "https://plus.unsplash.com/premium_photo-1668143358351-b20146dbcc02?q=80&w=500&auto=format&fit=crop", "Sushi"),
@@ -79,11 +90,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         _productos.value = repository.getAllProductos()
         _reservas.value = repository.getAllReservas()
         _pedidos.value = repository.getAllPedidos()
+        _mesas.value = repository.getAllMesas()
     }
 
     suspend fun login(email: String, pass: String): Usuario? {
         val cleanEmail = email.lowercase().trim()
         val user = repository.getUsuarioByEmail(cleanEmail)
+        if (pass.isEmpty()) return user
         return if (user != null && user.password == pass) user else null
     }
 
@@ -95,6 +108,42 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             repository.insertUsuario(usuario.copy(email = usuario.email.lowercase().trim()))
             refreshData()
+        }
+    }
+
+    fun resetPassword(email: String, newPass: String) {
+        viewModelScope.launch {
+            val user = repository.getUsuarioByEmail(email.lowercase().trim())
+            if (user != null) {
+                repository.updateUsuario(user.copy(password = newPass))
+                refreshData()
+            }
+        }
+    }
+
+    fun updateProfile(email: String, nuevoNombre: String, nuevoTelefono: String, nuevaPass: String) {
+        viewModelScope.launch {
+            val user = repository.getUsuarioByEmail(email.lowercase().trim())
+            if (user != null) {
+                val updatedUser = user.copy(
+                    nombre = if (nuevoNombre.isNotEmpty()) nuevoNombre else user.nombre,
+                    telefono = if (nuevoTelefono.isNotEmpty()) nuevoTelefono else user.telefono,
+                    password = if (nuevaPass.isNotEmpty()) nuevaPass else user.password
+                )
+                repository.updateUsuario(updatedUser)
+                refreshData()
+            }
+        }
+    }
+
+    // IE 2.3.1: Guardar URI de imagen de perfil
+    fun updateProfileImage(email: String, uri: String) {
+        viewModelScope.launch {
+            val user = repository.getUsuarioByEmail(email.lowercase().trim())
+            if (user != null) {
+                repository.updateUsuario(user.copy(imagenUri = uri))
+                refreshData()
+            }
         }
     }
 

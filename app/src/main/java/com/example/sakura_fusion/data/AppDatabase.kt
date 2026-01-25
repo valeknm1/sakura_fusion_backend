@@ -32,7 +32,7 @@ import com.example.sakura_fusion.data.detalle_pedido.DetallePedidoDao
         Pedido::class,
         DetallePedido::class
     ],
-    version = 1,
+    version = 3, // IE 2.3.1: Incremento a v3 por la adición de imagenUri en Usuario
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

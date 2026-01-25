@@ -25,7 +25,8 @@ import kotlinx.coroutines.launch
 fun LoginScreen(
     appViewModel: AppViewModel,
     onLoginSuccess: (String, String) -> Unit, 
-    onRegisterClick: () -> Unit
+    onRegisterClick: () -> Unit,
+    onForgotPasswordClick: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -108,6 +109,16 @@ fun LoginScreen(
                         singleLine = true
                     )
 
+                    // IE 2.1.2: Botón "¿Olvidaste tu contraseña?"
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(onClick = onForgotPasswordClick) {
+                            Text("¿Olvidaste tu contraseña?", fontSize = 12.sp)
+                        }
+                    }
+
                     AnimatedVisibility(visible = errorMessage != null) {
                         Text(
                             text = errorMessage ?: "",
@@ -117,7 +128,7 @@ fun LoginScreen(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     Button(
                         onClick = { 
